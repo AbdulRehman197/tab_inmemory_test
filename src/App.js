@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import "./App.css";
 
+
 function App({ bc }) {
   let [count, setCount] = useState(0);
   let [ch, setChannel] = useState("");
@@ -9,6 +10,7 @@ function App({ bc }) {
   useEffect(() => {
     console.log("something...", tabs);
     bc.onmessage = (e) => {
+      // The data type of the tab is a tab created by the user.
       switch (e.data.type) {
         case "createTab":
           setTabId(e.data.id);
@@ -35,6 +37,7 @@ function App({ bc }) {
   };
   const netTimeSet = ({ id, netTime }) => {
     let updateTabs = tabs.map((tab) => {
+      // Returns a new tab with the same id as the tab.
       if (tab.id === id) return { ...tab, netTime: netTime };
       return tab;
     });
@@ -42,6 +45,7 @@ function App({ bc }) {
   };
   const setTabId = (id) => {
     let newtablist = tabs.map((tab) => {
+      // Returns the tab s id.
       if (tab.id === undefined) return { ...tabs[tabs.length - 1], id: id };
       return tab;
     });
@@ -64,6 +68,7 @@ function App({ bc }) {
     // console.log("e", e);
     tabs.forEach((oldtab) => {
       // oldtab.onload = () => {
+      // count the number of items in the oldtab
       if (oldtab.id === id) {
         bc.postMessage({
           type: "count",
@@ -82,6 +87,7 @@ function App({ bc }) {
     // tab.close();
     tabs.forEach((oldtab) => {
       // oldtab.onload = () => {
+      // Close the oldtab. id if oldtab. id is oldtab. id
       if (oldtab.id === id) {
         ch.postMessage({
           type: "close",
@@ -96,12 +102,16 @@ function App({ bc }) {
     // e.preventDefault();
     let newTbList = [...tabs];
     let newlist = newTbList.map((oldtab) => {
+      // The oldtab element is the current tab
       if (type === "filecount" && oldtab.id === id) {
         return { ...oldtab, fileCount: e.target.value };
+      // Returns the old tab value.
       } else if (type === "stringcount" && oldtab.id === id) {
         return { ...oldtab, stringCount: e.target.value };
+      // Returns the oldtab value for the current tab.
       } else if (type === "radio" && oldtab.id === id) {
         return { ...oldtab, method: e.target.value };
+      // If the type is string return the oldtab as a string.
       } else if (type === "string" && oldtab.id === id) {
         return { ...oldtab, inputstring: e.target.value };
       } else {
