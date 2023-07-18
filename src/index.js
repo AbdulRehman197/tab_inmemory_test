@@ -7,12 +7,12 @@ import SaveMemory from "./SaveMemory";
 import reportWebVitals from "./reportWebVitals";
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
-const bc = new BroadcastChannel("test_memory");
+
 root.render(
   <BrowserRouter>
     <Routes>
-      <Route path="/" element={<App bc={bc} />} />
-      <Route path="/newTab" element={<SaveMemory bc={bc} />} />
+      <Route path="/" element={<App  />} />
+      <Route path="/newTab" element={<SaveMemory  />} />
     </Routes>
   </BrowserRouter>
 );

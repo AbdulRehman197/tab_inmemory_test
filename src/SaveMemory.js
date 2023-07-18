@@ -1,23 +1,28 @@
-import { useState, useEffect } from "react";
-const SaveMemory = ({ bc }) => {
+import { useState, useEffect, useRef } from "react";
+const SaveMemory = () => {
   let [tabId, setTabId] = useState("");
   let [storeObject, setStoreObject] = useState({});
   let [storeArray, setStoreArray] = useState([]);
   let [storeMap, setStoreMap] = useState(new Map());
   let [storeSet, setStoreSet] = useState(new Set());
-
+  let [ram, setRam] = useState(0);
+  let bc = useRef(new BroadcastChannel("test_memory"));
   useEffect(() => {
     let id = crypto.randomUUID();
-    bc.postMessage({
+    console.log("bc1", bc.current);
+
+    bc.current.postMessage({
       type: "createTab",
       id: id,
     });
 
+    console.log("bc2", bc.current);
     setTabId(id);
     console.log("newid", id);
-    bc.onmessage = (e) => {
+    bc.current.onmessage = (e) => {
       switch (e.data.type) {
-        case "count":
+        case "startProcess":
+          console.log("start", e.data);
           if (tabId !== "") {
             handleFunction(e.data, tabId);
           } else {
@@ -45,32 +50,44 @@ const SaveMemory = ({ bc }) => {
     setTabId(tabID);
     console.log("tabid", tabID);
     if (id === tabID) {
-      bc.postMessage({
+      bc.current.postMessage({
         type: "tabClosed",
         id,
       });
-      setTimeout(()=>{
+      setTimeout(() => {
         window.close();
-
-      },10)
+      }, 10);
     }
   };
-  const handleFunction = async (
-    { id, inputstring, fileCount, stringCount, method },
+
+  const sendMessage = (type, id, props) => {
+    bc.current.postMessage({
+      type: type,
+      id: id,
+      props,
+    });
+  };
+  const handleFunction = (
+    { ids, inputstring, fileCount, stringCount, method },
     tabID
   ) => {
     debugger;
     setTabId(tabID);
-    console.log("id", tabID);
-    if (id === tabID) {
-      console.log("this tab is ", id);
-      const t0 = performance.now();
+    console.log("id", ids, tabID);
+    let getValue = getTheid(ids, tabID);
+    console.log("getValue", getValue);
+
+    if (getTheid(ids, tabID)) {
+      console.log("this is tab", tabID);
+      let t0 = performance.now();
       let userString = "";
       for (let i = 0; i < stringCount; i++) {
         userString += inputstring;
       }
       switch (method) {
         case "Object":
+          // sendMessage("updateProps", tabID, props);
+
           for (let i = 0; i < fileCount; i++) {
             setStoreObject((oldStoreObject) => ({
               ...oldStoreObject,
@@ -87,7 +104,7 @@ const SaveMemory = ({ bc }) => {
           for (let i = 0; i < fileCount; i++) {
             setStoreMap((oldStoreMap) =>
               oldStoreMap.set(userString + i, userString)
-            );
+            );         
           }
           break;
         case "Set":
@@ -99,14 +116,19 @@ const SaveMemory = ({ bc }) => {
         default:
           break;
       }
+
       // console.log("new string", userString);
-      const t1 = performance.now();
-      console.log(`Call to doSomething took ${t1 - t0} milliseconds.`);
-      bc.postMessage({
-        type: "nettime",
-        id: id,
-        netTime: t1 - t0,
-      });
+      // console.log(`Call to doSomething took ${t1 - t0} milliseconds.`);
+    }
+  };
+
+
+  const getTheid = (ids, tabId) => {
+    console.log("getid", ids, tabId);
+    if (ids.length > 0) {
+      return !ids.includes(tabId);
+    } else {
+      return true;
     }
   };
 

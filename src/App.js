@@ -1,19 +1,27 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import "./App.css";
 
-
-function App({ bc }) {
-  let [count, setCount] = useState(0);
-  let [ch, setChannel] = useState("");
+function App() {
+  let [state, setState] = useState({
+    string: "",
+    fileCount: 0,
+    stringCount: 0,
+    method: "Object",
+  });
+  let bc = useRef(new BroadcastChannel("test_memory"));
   let [tabs, setTabs] = useState([]);
+  let [ids, setIds] = useState([]);
 
   useEffect(() => {
-    console.log("something...", tabs);
-    bc.onmessage = (e) => {
+    console.log("something...", ids);
+    bc.current.onmessage = (e) => {
+      debugger;
       // The data type of the tab is a tab created by the user.
       switch (e.data.type) {
         case "createTab":
           setTabId(e.data.id);
+          setIds((preIds) => [...preIds, e.data.id]);
+
           break;
         case "nettime":
           netTimeSet(e.data);
@@ -21,11 +29,12 @@ function App({ bc }) {
         case "tabClosed":
           handleTabClosed(e.data);
           break;
+      
         default:
           break;
       }
     };
-    setChannel(bc);
+
     // eslint-disable-next-line no-use-before-define, react-hooks/exhaustive-deps
   }, [bc, tabs]);
 
@@ -44,43 +53,26 @@ function App({ bc }) {
     setTabs(updateTabs);
   };
   const setTabId = (id) => {
-    let newtablist = tabs.map((tab) => {
-      // Returns the tab s id.
-      if (tab.id === undefined) return { ...tabs[tabs.length - 1], id: id };
-      return tab;
-    });
-
-    setTabs(newtablist);
+    debugger;
+    setTabs((preTabs) => [...preTabs, { id: id }]);
     // console.log("tabs", tabs);
   };
-  const handleOpenTab = () => {
-    let tab = window.open("/newTab", "_blank", "noopener");
-    setTabs((tabs) => [...tabs, { tab }]);
-    // console.log("tab", tab);
-  };
 
-  const handleSaveFileCount = (
-    e,
-    { id, inputstring, fileCount, stringCount, method }
-  ) => {
-    // e.preventDefault();
-    console.log("wind", window);
-    // console.log("e", e);
-    tabs.forEach((oldtab) => {
-      // oldtab.onload = () => {
-      // count the number of items in the oldtab
-      if (oldtab.id === id) {
-        bc.postMessage({
-          type: "count",
-          id,
-          inputstring,
-          fileCount,
-          stringCount,
-          method,
-        });
-      }
-      // };
-    });
+  const handleSaveFileCount = (e) => {
+    let { string, fileCount, stringCount, method } = state;
+    // count the number of items in the oldtab
+    window.open("/newTab", "_blank", "noopener");
+
+    setTimeout(() => {
+      bc.current.postMessage({
+        type: "startProcess",
+        ids,
+        string,
+        fileCount,
+        stringCount,
+        method,
+      });
+    }, 1000);
   };
   const handleCloseTab = ({ id }) => {
     // setTabs(newlist);
@@ -89,7 +81,7 @@ function App({ bc }) {
       // oldtab.onload = () => {
       // Close the oldtab. id if oldtab. id is oldtab. id
       if (oldtab.id === id) {
-        ch.postMessage({
+        bc.current.postMessage({
           type: "close",
           id,
         });
@@ -98,141 +90,144 @@ function App({ bc }) {
     });
   };
 
-  const handleFileCount = (e, id, type) => {
-    // e.preventDefault();
-    let newTbList = [...tabs];
-    let newlist = newTbList.map((oldtab) => {
-      // The oldtab element is the current tab
-      if (type === "filecount" && oldtab.id === id) {
-        return { ...oldtab, fileCount: e.target.value };
-      // Returns the old tab value.
-      } else if (type === "stringcount" && oldtab.id === id) {
-        return { ...oldtab, stringCount: e.target.value };
-      // Returns the oldtab value for the current tab.
-      } else if (type === "radio" && oldtab.id === id) {
-        return { ...oldtab, method: e.target.value };
-      // If the type is string return the oldtab as a string.
-      } else if (type === "string" && oldtab.id === id) {
-        return { ...oldtab, inputstring: e.target.value };
-      } else {
-        return oldtab;
-      }
-    });
-    setTabs(newlist);
+  const handleOnChange = (e) => {
+    setState((preState) => ({
+      ...preState,
+      [e.target.name]: e.target.value,
+    }));
   };
+
   return (
     <div className="App">
-      <h1>App</h1>
-      {/* {console.log("state", tabs)} */}
-      <button onClick={handleOpenTab}>Open Tab</button>
+      <h1>Inmemory App </h1>
+      {console.log("tabs", tabs)}
+      {/* <button onClick={handleOpenTab}>Open Tab</button> */}
 
       <>
         <div id="tabs">
           <table>
-            {tabs.length > 0 ? (
-              <thead>
-                <tr>
-                  <th>Tab ID</th>
-                  <th>String</th>
-                  <th>String Repeat Count</th>
-                  <th>File Repeat Count</th>
-                  <th>Data Structure</th>
-                  <th>Net Time</th>
-                  <th>File Save Method</th>
-                  <th>Tab Close</th>
-                </tr>
-              </thead>
-            ) : null}
+            <thead>
+              <tr>
+                {/* <th>Tab ID</th> */}
+                <th>String</th>
+                <th>String Repeat Count</th>
+                <th>File Repeat Count</th>
+                <th>Data Structure</th>
+                {/* <th>Net Time</th> */}
+                <th>File Save Method</th>
+                {/* <th>Tab Close</th> */}
+              </tr>
+            </thead>
 
             <tbody>
-              {tabs.length > 0
-                ? tabs.map((tab, i) => {
-                    return (
-                      <tr key={i}>
-                        <td>{tab.id}</td>
-                        <td>
-                          {" "}
-                          <input
-                            onChange={(e) =>
-                              handleFileCount(e, tab.id, "string")
-                            }
-                            type="text"
-                          />
-                        </td>
-                        <td>
-                          <input
-                            onChange={(e) =>
-                              handleFileCount(e, tab.id, "stringcount")
-                            }
-                            type="number"
-                          />
-                        </td>
-                        <td>
-                          <input
-                            onChange={(e) =>
-                              handleFileCount(e, tab.id, "filecount")
-                            }
-                            type="number"
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="radio"
-                            value="Object"
-                            onChange={(e) =>
-                              handleFileCount(e, tab.id, "radio")
-                            }
-                            name={tab.id}
-                            checked={tab.method === "Object"}
-                          />
-                          <lable>Object</lable>
-                          <input
-                            type="radio"
-                            value="Array"
-                            onChange={(e) =>
-                              handleFileCount(e, tab.id, "radio")
-                            }
-                            name={tab.id}
-                            checked={tab.method === "Array"}
-                          />
-                          <lable>Array</lable>
-                          <input
-                            type="radio"
-                            value="Map"
-                            onChange={(e) =>
-                              handleFileCount(e, tab.id, "radio")
-                            }
-                            name={tab.id}
-                            checked={tab.method === "Map"}
-                          />
-                          <lable>Map</lable>
-                          <input
-                            type="radio"
-                            value="Set"
-                            onChange={(e) =>
-                              handleFileCount(e, tab.id, "radio")
-                            }
-                            name={tab.id}
-                            checked={tab.method === "Set"}
-                          />
-                          <lable>Set</lable>
-                        </td>
-                        <td>{tab.netTime ? tab.netTime : "waiting..."}</td>
-                        <td>
-                          <button onClick={(e) => handleSaveFileCount(e, tab)}>
-                            Start Processing
-                          </button>
-                        </td>
-                        <td>
+              <tr>
+                {/* <td>{tab.id}</td> */}
+                <td>
+                  {" "}
+                  <input name="string" onChange={handleOnChange} type="text" />
+                </td>
+                <td>
+                  <input
+                    name="stringCount"
+                    onChange={handleOnChange}
+                    type="number"
+                  />
+                </td>
+                <td>
+                  <input
+                    name="fileCount"
+                    onChange={handleOnChange}
+                    type="number"
+                  />
+                </td>
+                <td>
+                  <input
+                    type="radio"
+                    value="Object"
+                    onChange={handleOnChange}
+                    name="method"
+                    checked={state.method === "Object"}
+                  />
+                  <lable>Object</lable>
+                  <input
+                    type="radio"
+                    value="Array"
+                    onChange={handleOnChange}
+                    name="method"
+                    checked={state.method === "Array"}
+                  />
+                  <lable>Array</lable>
+                  <input
+                    type="radio"
+                    value="Map"
+                    onChange={handleOnChange}
+                    name="method"
+                    checked={state.method === "Map"}
+                  />
+                  <lable>Map</lable>
+                  <input
+                    type="radio"
+                    value="Set"
+                    onChange={handleOnChange}
+                    name="method"
+                    checked={state.method === "Set"}
+                  />
+                  <lable>Set</lable>
+                </td>
+                {/* <td>{tab.netTime ? tab.netTime : "waiting..."}</td> */}
+                <td>
+                  <button onClick={handleSaveFileCount}>
+                    Start Processing
+                  </button>
+                </td>
+                {/* <td>
                           <button onClick={() => handleCloseTab(tab)}>
                             Close Tab
                           </button>
-                        </td>
-                      </tr>
-                    );
-                  })
-                : null}
+                        </td> */}
+              </tr>
+              {/* })
+                : null} */}
             </tbody>
+          </table>
+          <br />
+          <br />
+          <table>
+            <thead>
+              <tr>
+                <th>Tab ID</th>
+                <th>File Size (Bytes)</th>
+                <th>File Target Count</th>
+                <th>File Current Count</th>
+                <th>Data Structure</th>
+                <th>Status</th>
+                <th>RAM Usage</th>
+                <th>Net Time</th>
+                <th>Tab Close</th>
+              </tr>
+            </thead>
+            {tabs.length &&
+              tabs.map((tab) => {
+                return (
+                  <tbody>
+                    <tr>
+                      <td>{tab.id}</td>
+                      <td>{tab?.fileSize}</td>
+                      <td>{tab?.targetCount}</td>
+                      <td>{tab?.currentCount}</td>
+                      <td>{tab?.Smethod}</td>
+                      <td>{tab?.status}</td>
+                      <td>{tab?.ram / 1024 / 1024}</td>
+                      <td>{tab?.netTime}</td>
+                      <td>
+                        <button onClick={() => handleCloseTab()}>
+                          Close Tab
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                );
+              })}
           </table>
         </div>
       </>
