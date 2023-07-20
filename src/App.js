@@ -19,9 +19,29 @@ function App() {
       // The data type of the tab is a tab created by the user.
       switch (e.data.type) {
         case "createTab":
+          setState((preState) => {
+            let { string, fileCount, stringCount, method } = preState;
+            bc.current.postMessage({
+              type: "startProcess",
+              ids,
+              inputstring: string,
+              fileCount,
+              stringCount,
+              method,
+            });
+            return preState;
+          });
           setTabId(e.data.id);
           setIds((preIds) => [...preIds, e.data.id]);
-
+          break;
+        // case "createTabHandler":
+        //   // createTab(e.data);
+        //   debugger;
+        //   console.log("trigerr");
+        //   break;
+        case "updateProps":
+          debugger;
+          handleChangeProps(e.data);
           break;
         case "nettime":
           netTimeSet(e.data);
@@ -29,7 +49,7 @@ function App() {
         case "tabClosed":
           handleTabClosed(e.data);
           break;
-      
+
         default:
           break;
       }
@@ -37,12 +57,36 @@ function App() {
 
     // eslint-disable-next-line no-use-before-define, react-hooks/exhaustive-deps
   }, [bc, tabs]);
+  const createTab = ({ props }) => {
+    let { id } = props;
+    setIds((preIds) => [...preIds, id]);
+    setTabs((pretabs) => [...pretabs, props]);
+  };
+  const handleChangeProps = ({ props, id }) => {
+    // setTabId(e.data.id);
+
+    let updateTabs;
+    if (tabs.length > 0) {
+      updateTabs = tabs.map((tab) => {
+        // Returns a new tab with the same id as the tab.
+        if (tab.id === id) return { ...tab, ...props };
+        setTabs((preTbas) => [...preTbas, { id: id, ...props }]);
+        return tab;
+      });
+    } else {
+      updateTabs = [props];
+    }
+
+    setTabs(updateTabs);
+  };
 
   const handleTabClosed = ({ id }) => {
-    let newlist = tabs.filter((oldtab) => {
-      return oldtab.id !== id;
+    let updateTabs = tabs.map((tab) => {
+      // Returns a new tab with the same id as the tab.
+      if (tab.id === id) return { ...tab, status: "closed" };
+      return tab;
     });
-    setTabs(newlist);
+    setTabs(updateTabs);
   };
   const netTimeSet = ({ id, netTime }) => {
     let updateTabs = tabs.map((tab) => {
@@ -59,22 +103,20 @@ function App() {
   };
 
   const handleSaveFileCount = (e) => {
+    e.preventDefault();
     let { string, fileCount, stringCount, method } = state;
     // count the number of items in the oldtab
-    window.open("/newTab", "_blank", "noopener");
+    window.open(
+      "/newTab",
+      "_blank",
+      "noopener,left=100,top=100,width=320,height=320"
+    );
 
-    setTimeout(() => {
-      bc.current.postMessage({
-        type: "startProcess",
-        ids,
-        string,
-        fileCount,
-        stringCount,
-        method,
-      });
-    }, 1000);
+    // setTimeout(() => {
+
+    // }, 1500);
   };
-  const handleCloseTab = ({ id }) => {
+  const handleCloseTab = (id) => {
     // setTabs(newlist);
     // tab.close();
     tabs.forEach((oldtab) => {
@@ -101,6 +143,7 @@ function App() {
     <div className="App">
       <h1>Inmemory App </h1>
       {console.log("tabs", tabs)}
+      {console.log("state", state)}
       {/* <button onClick={handleOpenTab}>Open Tab</button> */}
 
       <>
@@ -146,7 +189,7 @@ function App() {
                     value="Object"
                     onChange={handleOnChange}
                     name="method"
-                    checked={state.method === "Object"}
+                    checked={state?.method === "Object"}
                   />
                   <lable>Object</lable>
                   <input
@@ -154,7 +197,7 @@ function App() {
                     value="Array"
                     onChange={handleOnChange}
                     name="method"
-                    checked={state.method === "Array"}
+                    checked={state?.method === "Array"}
                   />
                   <lable>Array</lable>
                   <input
@@ -162,7 +205,7 @@ function App() {
                     value="Map"
                     onChange={handleOnChange}
                     name="method"
-                    checked={state.method === "Map"}
+                    checked={state?.method === "Map"}
                   />
                   <lable>Map</lable>
                   <input
@@ -170,7 +213,7 @@ function App() {
                     value="Set"
                     onChange={handleOnChange}
                     name="method"
-                    checked={state.method === "Set"}
+                    checked={state?.method === "Set"}
                   />
                   <lable>Set</lable>
                 </td>
@@ -215,12 +258,12 @@ function App() {
                       <td>{tab?.fileSize}</td>
                       <td>{tab?.targetCount}</td>
                       <td>{tab?.currentCount}</td>
-                      <td>{tab?.Smethod}</td>
+                      <td>{tab?.method}</td>
                       <td>{tab?.status}</td>
-                      <td>{tab?.ram / 1024 / 1024}</td>
+                      <td>{tab?.ram}</td>
                       <td>{tab?.netTime}</td>
                       <td>
-                        <button onClick={() => handleCloseTab()}>
+                        <button onClick={() => handleCloseTab(tab.id)}>
                           Close Tab
                         </button>
                       </td>
