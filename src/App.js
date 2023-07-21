@@ -4,59 +4,103 @@ import "./App.css";
 function App() {
   let [state, setState] = useState({
     string: "",
-    fileCount: 0,
+    fileCount: "0",
     stringCount: 0,
     method: "Object",
   });
   let bc = useRef(new BroadcastChannel("test_memory"));
+
+  let worker = useRef("");
+
   let [tabs, setTabs] = useState([]);
   let [ids, setIds] = useState([]);
 
   useEffect(() => {
-    console.log("something...", ids);
-    bc.current.onmessage = (e) => {
-      debugger;
-      // The data type of the tab is a tab created by the user.
+    // console.log(" worker", worker.current);
+    worker.current = new SharedWorker("worker.js");
+    // worker.current.port.postMessage("app");
+    worker.current.port.onmessage = function (e) {
+      console.log("Message received from worker", e);
       switch (e.data.type) {
         case "createTab":
           setState((preState) => {
-            let { string, fileCount, stringCount, method } = preState;
-            bc.current.postMessage({
+            worker.current.port.postMessage({
               type: "startProcess",
-              ids,
-              inputstring: string,
-              fileCount,
-              stringCount,
-              method,
+              state: preState,
             });
             return preState;
           });
-          setTabId(e.data.id);
-          setIds((preIds) => [...preIds, e.data.id]);
-          break;
-        // case "createTabHandler":
-        //   // createTab(e.data);
-        //   debugger;
-        //   console.log("trigerr");
-        //   break;
-        case "updateProps":
-          debugger;
-          handleChangeProps(e.data);
-          break;
-        case "nettime":
-          netTimeSet(e.data);
-          break;
-        case "tabClosed":
-          handleTabClosed(e.data);
-          break;
 
+          break;
+        case "reaceviedTab":
+          console.log(e.data);
+          setTabs((preState) => [...preState, e.data.state]);
+          break;
+        case "updateTabInfo":
+          debugger;
+          console.log("updateTabInfo", e.data);
+          updateInfo(e.data);
+          break;
         default:
           break;
       }
+      // console.log("e", e);
     };
+    // worker.port.start();
+    const updateInfo = ({ id, prop }) => {
+      setTabs((updateTabs) => {
+        return updateTabs.map((tab) => {
+          // Returns a new tab with the same id as the tab.
+          console.log("tab111", tab);
+          if (tab.id === id) return { ...tab, ...prop };
+
+          return tab;
+        });
+      });
+    };
+    // // console.log("something...", ids);
+    // bc.current.onmessage = (e) => {
+    //   // The data type of the tab is a tab created by the user.
+    //   switch (e.data.type) {
+    //     case "createTab":
+    //       setState((preState) => {
+    //         let { string, fileCount, stringCount, method } = preState;
+    //         bc.current.postMessage({
+    //           type: "startProcess",
+    //           ids,
+    //           inputstring: string,
+    //           fileCount,
+    //           stringCount,
+    //           method,
+    //         });
+    //         return preState;
+    //       });
+    //       setTabId(e.data.id);
+    //       setIds((preIds) => [...preIds, e.data.id]);
+    //       break;
+    //     // case "createTabHandler":
+    //     //   // createTab(e.data);
+    //     //   debugger;
+    //     //   console.log("trigerr");
+    //     //   break;
+    //     case "updateProps":
+    //       debugger;
+    //       handleChangeProps(e.data);
+    //       break;
+    //     case "nettime":
+    //       netTimeSet(e.data);
+    //       break;
+    //     case "tabClosed":
+    //       handleTabClosed(e.data);
+    //       break;
+
+    //     default:
+    //       break;
+    //   }
+    // };
 
     // eslint-disable-next-line no-use-before-define, react-hooks/exhaustive-deps
-  }, [bc, tabs]);
+  }, []);
   const createTab = ({ props }) => {
     let { id } = props;
     setIds((preIds) => [...preIds, id]);
@@ -104,14 +148,15 @@ function App() {
 
   const handleSaveFileCount = (e) => {
     e.preventDefault();
-    let { string, fileCount, stringCount, method } = state;
+    // let { string, fileCount, stringCount, method } = state;
     // count the number of items in the oldtab
-    window.open(
-      "/newTab",
-      "_blank",
-      "noopener,left=100,top=100,width=320,height=320"
-    );
-
+    window.open("/newTab", "_blank", "noopener");
+    // setTimeout(() => {
+    //   worker.current.port.postMessage({
+    //     type: "startProcess",
+    //     state,
+    //   });
+    // }, 1000);
     // setTimeout(() => {
 
     // }, 1500);
@@ -123,7 +168,7 @@ function App() {
       // oldtab.onload = () => {
       // Close the oldtab. id if oldtab. id is oldtab. id
       if (oldtab.id === id) {
-        bc.current.postMessage({
+       worker.current.port.postMessage({
           type: "close",
           id,
         });
@@ -223,6 +268,7 @@ function App() {
                     Start Processing
                   </button>
                 </td>
+
                 {/* <td>
                           <button onClick={() => handleCloseTab(tab)}>
                             Close Tab
@@ -256,7 +302,7 @@ function App() {
                     <tr>
                       <td>{tab.id}</td>
                       <td>{tab?.fileSize}</td>
-                      <td>{tab?.targetCount}</td>
+                      <td>{tab?.fileCount}</td>
                       <td>{tab?.currentCount}</td>
                       <td>{tab?.method}</td>
                       <td>{tab?.status}</td>
