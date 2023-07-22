@@ -6,7 +6,7 @@ const SaveMemory = () => {
   let [storeMap, setStoreMap] = useState(new Map());
   let [storeSet, setStoreSet] = useState(new Set());
   let worker = useRef("");
-  
+
   useEffect(() => {
     worker.current = new SharedWorker("worker.js");
     worker.current.port.onmessage = function (e) {
@@ -27,7 +27,7 @@ const SaveMemory = () => {
     const handleTabClose = (event) => {
       setState((Prestate) => {
         worker.current.port.postMessage({
-          type: "updateTabInfo",
+          type: "closeTab",
           id: Prestate.id,
           prop: {
             status: "closed",
@@ -51,7 +51,7 @@ const SaveMemory = () => {
     for (let i = 0; i < stringCount; i++) {
       userString += string;
     }
- 
+
     let fileS = new Blob([userString]).size;
 
     console.log("1", fileS);
@@ -66,8 +66,6 @@ const SaveMemory = () => {
         status: "open",
       },
     });
-
-
 
     switch (method) {
       case "Object":
@@ -96,9 +94,10 @@ const SaveMemory = () => {
       case "Array":
         for (let i = 0; i < fileCount; i++) {
           setStoreArray((oldStoreArray) => {
+            console.log("new Object", oldStoreArray);
             handleCalculate(oldStoreArray.length, fileCount, id, t0);
             // oldStoreArray.push(userString)
-            return [...oldStoreArray, userString + i];
+            return [...oldStoreArray, { [userString + i]: userString }];
           });
         }
         break;
@@ -149,11 +148,8 @@ const SaveMemory = () => {
           netTime: t1 - t0,
         },
       });
-   
     }
   };
-
-
 
   const renderString = (store) => {
     console.log("store", store);

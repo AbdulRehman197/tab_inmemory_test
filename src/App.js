@@ -51,20 +51,21 @@ function App() {
         });
       });
     };
-
   }, []);
-
-
 
   const handleSaveFileCount = (e) => {
     e.preventDefault();
     // count the number of items in the oldtab
-    window.open("/newTab", "_blank", "noopener");
+    window.open(
+      "/newTab",
+      "_blank",
+      "noopener,top=100,left=100,width=300,height=300"
+    );
   };
   const handleCloseTab = (id) => {
     tabs.forEach((oldtab) => {
       if (oldtab.id === id) {
-       worker.current.port.postMessage({
+        worker.current.port.postMessage({
           type: "close",
           id,
         });

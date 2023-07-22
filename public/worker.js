@@ -11,7 +11,6 @@ self.onconnect = function (event) {
   }
 
   port.onmessage = function (e) {
-
     switch (e.data.type) {
       case "startProcess":
         clients[clients.length - 1].port.postMessage({
@@ -26,11 +25,22 @@ self.onconnect = function (event) {
         clients[0].port.postMessage(e.data);
         break;
       case "close":
-        clients.forEach((client) => client.id === e.data.id ? client.port.postMessage(e.data) : null);
+        clients.forEach((client) =>
+          client.id === e.data.id ? client.port.postMessage(e.data) : null
+        );
+        break;
+      case "closeTab":
+        clients = clients.filter((client) => {
+          return client.id !== e.data.id;
+        });
+        clients[0].port.postMessage({
+          type: "updateTabInfo",
+          id: e.data.id,
+          prop: e.data.prop,
+        });
         break;
       default:
         break;
     }
   };
- 
 };
