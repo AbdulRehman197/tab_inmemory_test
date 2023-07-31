@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import "./App.css";
-function App() {
+function App({ wk }) {
   let [state, setState] = useState({
     string: "",
     fileCount: "0",
@@ -12,11 +12,13 @@ function App() {
   let [tabs, setTabs] = useState([]);
 
   useEffect(() => {
-    worker.current = new SharedWorker("worker.js");
+    worker.current = wk;
     worker.current.port.onmessage = function (e) {
-      console.log("Message received from worker", e);
+      // console.log("Message received from worker", e);
       switch (e.data.type) {
         case "createTab":
+          // setTimeout(() => {
+          // console.log("2");
           setState((preState) => {
             worker.current.port.postMessage({
               type: "startProcess",
@@ -24,15 +26,16 @@ function App() {
             });
             return preState;
           });
+          // }, 1000);
 
           break;
         case "reaceviedTab":
-          console.log(e.data);
+          // console.log(e.data);
           setTabs((preState) => [...preState, e.data.state]);
           break;
         case "updateTabInfo":
           debugger;
-          console.log("updateTabInfo", e.data);
+          // console.log("updateTabInfo", e.data);
           updateInfo(e.data);
           break;
         default:
@@ -44,7 +47,7 @@ function App() {
       setTabs((updateTabs) => {
         return updateTabs.map((tab) => {
           // Returns a new tab with the same id as the tab.
-          console.log("tab111", tab);
+          // console.log("tab111", tab);
           if (tab.id === id) return { ...tab, ...prop };
 
           return tab;
@@ -53,25 +56,35 @@ function App() {
     };
   }, []);
 
-  const handleSaveFileCount = (e) => {
+  const handleSaveFileCount = async (e) => {
     e.preventDefault();
     // count the number of items in the oldtab
-    window.open(
-      "/newTab",
-      "_blank",
-      "noopener,top=100,left=100,width=300,height=300"
-    );
+    // window.open(
+    //   "/newTab",
+    //   "_blank",
+    //   "noopener,top=100,left=100,width=300,height=300"
+    // );
+    // eslint-disable-next-line no-undef
+    await CefSharp.BindObjectAsync("Headless");
+    // eslint-disable-next-line no-undef
+    let isOpen = await Headless.createTab();
+    console.log("isoepn", isOpen);
   };
-  const handleCloseTab = (id) => {
-    tabs.forEach((oldtab) => {
-      if (oldtab.id === id) {
-        worker.current.port.postMessage({
-          type: "close",
-          id,
-        });
-      }
-      // };
-    });
+  const handleCloseTab =async (id) => {
+    // eslint-disable-next-line no-undef
+    await CefSharp.BindObjectAsync("Headless");
+    // eslint-disable-next-line no-undef
+    let isOpen = await Headless.closeTab(id);
+    console.log("isoepn", isOpen);
+    // tabs.forEach((oldtab) => {
+    //   if (oldtab.id === id) {
+    //     worker.current.port.postMessage({
+    //       type: "close",
+    //       id,
+    //     });
+    //   }
+    //   // };
+    // });
   };
 
   const handleOnChange = (e) => {
@@ -84,8 +97,8 @@ function App() {
   return (
     <div className="App">
       <h1>Inmemory App </h1>
-      {console.log("tabs", tabs)}
-      {console.log("state", state)}
+      {/* {console.log("tabs", tabs)}
+      {console.log("state", state)} */}
       {/* <button onClick={handleOpenTab}>Open Tab</button> */}
 
       <>
@@ -193,7 +206,7 @@ function App() {
               </tr>
             </thead>
             {tabs.length &&
-              tabs.map((tab) => {
+              tabs.map((tab, i) => {
                 return (
                   <tbody>
                     <tr>
@@ -206,7 +219,7 @@ function App() {
                       <td>{tab?.ram}</td>
                       <td>{tab?.netTime}</td>
                       <td>
-                        <button onClick={() => handleCloseTab(tab.id)}>
+                        <button onClick={() => handleCloseTab(i)}>
                           Close Tab
                         </button>
                       </td>

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-const SaveMemory = () => {
+const SaveMemory = ({wk}) => {
   let [state, setState] = useState({});
   let [storeObject, setStoreObject] = useState({});
   let [storeArray, setStoreArray] = useState([]);
@@ -7,10 +7,14 @@ const SaveMemory = () => {
   let [storeSet, setStoreSet] = useState(new Set());
   let worker = useRef("");
 
+
   useEffect(() => {
-    worker.current = new SharedWorker("worker.js");
+    worker.current =wk
+
+    console.log("worker", worker);
     worker.current.port.onmessage = function (e) {
       console.log("Message received from worker", e);
+      console.log("event render", e);
       switch (e.data.type) {
         case "startProcess":
           setState(e.data.state);
@@ -24,6 +28,7 @@ const SaveMemory = () => {
           break;
       }
     };
+
     const handleTabClose = (event) => {
       setState((Prestate) => {
         worker.current.port.postMessage({

@@ -5,14 +5,16 @@ import "./index.css";
 import App from "./App";
 import SaveMemory from "./SaveMemory";
 import reportWebVitals from "./reportWebVitals";
-
+let worker = new SharedWorker(new URL("worker.js", import.meta.url), {
+  type: "module",
+});
 const root = ReactDOM.createRoot(document.getElementById("root"));
 
 root.render(
   <BrowserRouter>
     <Routes>
-      <Route path="/" element={<App  />} />
-      <Route path="/newTab" element={<SaveMemory  />} />
+      <Route path="/" element={<App wk={worker} />} />
+      <Route path="/newTab" element={<SaveMemory wk={worker} />} />
     </Routes>
   </BrowserRouter>
 );
